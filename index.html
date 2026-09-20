@@ -132,26 +132,62 @@
 <body>
 <div id="stage">
   <canvas id="c" width="1200" height="780"></canvas>
-
+ 
   <div class="veil on" id="titleVeil">
     <h1>Wave<span>Breaker</span></h1>
     <p>Hold the floor for as long as you can. Every wave sends more of them, and every wave you survive makes you stronger.</p>
     <div class="keys" id="keyHints"></div>
     <button id="startBtn">Start wave 1</button>
     <div class="hint" id="bestHint"></div>
-    <button id="openKeysBtn" class="ghost">Controls</button>
+    <div class="hint" style="font-size:11px;color:#8b95b4;margin-top:8px">
+      <strong>Ver 0.2 Pre Alpha</strong><br>
+      Fix some bugs, enlarged the area, modified the gun, made a mobile version
+    </div>
+    <button id="openKeysBtn" class="ghost">Controls & Settings</button>
   </div>
-
+ 
   <div class="veil" id="keysVeil">
-    <h2>Controls</h2>
-    <p>Click a key, then press the new one you want.</p>
-    <div class="rebind-list" id="rebindList"></div>
+    <h2>Controls & Settings</h2>
+    <div id="settingsScroll" style="max-height: 500px; overflow-y: auto; padding: 16px 0;">
+      <!-- CONTROLS SECTION -->
+      <h3 style="margin: 0 0 12px 0; font-size:14px; color:#8b95b4">Controls</h3>
+      <p style="margin: 0 0 12px 0; font-size:12px; color:#8b95b4">Click a key, then press the new one you want.</p>
+      <div class="rebind-list" id="rebindList"></div>
+      
+      <hr style="border: none; border-top: 1px solid rgba(139,149,180,.2); margin: 16px 0;">
+      
+      <!-- SETTINGS SECTION -->
+      <h3 style="margin: 0 0 12px 0; font-size:14px; color:#8b95b4">Settings</h3>
+      
+      <div class="setting-row">
+        <input type="checkbox" id="mouseModeToggle">
+        <span class="setting-label">Mouse aiming mode</span>
+      </div>
+      <div class="setting-row">
+        <input type="checkbox" id="alwaysCrosshairToggle">
+        <span class="setting-label">Always face crosshair (center screen)</span>
+      </div>
+      <div class="setting-row">
+        <input type="checkbox" id="mobileModeToggle">
+        <span class="setting-label">Mobile mode (virtual joysticks)</span>
+      </div>
+      
+      <hr style="border: none; border-top: 1px solid rgba(139,149,180,.2); margin: 16px 0;">
+      
+      <!-- CONTROL PANEL SELECTION -->
+      <h3 style="margin: 0 0 12px 0; font-size:14px; color:#8b95b4">Platform</h3>
+      <div style="display: flex; gap: 8px;">
+        <button id="desktopModeBtn" style="flex: 1; padding: 8px; background: #49e3d0; color: #0a0d16; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Desktop</button>
+        <button id="mobilePlatformBtn" style="flex: 1; padding: 8px; background: rgba(73,227,208,.3); color: #49e3d0; border: 1px solid #49e3d0; border-radius: 4px; cursor: pointer; font-weight: 600;">Mobile</button>
+      </div>
+    </div>
+    
     <div class="key-actions">
       <button id="resetKeysBtn" class="ghost">Reset to default</button>
       <button id="backKeysBtn">Done</button>
     </div>
   </div>
-
+ 
   <div class="veil" id="deadVeil">
     <h2>You went down</h2>
     <div class="stat">Reached wave <b id="deadWave">1</b></div>
@@ -159,91 +195,96 @@
     <div class="best" id="deadBest"></div>
     <button id="againBtn">Start over</button>
   </div>
-
+ 
   <div class="veil" id="pauseVeil">
     <h2>Paused</h2>
     <p>Press Esc to drop back in.</p>
     <button id="resumeBtn">Resume</button>
   </div>
-
-  <div class="veil" id="settingsVeil">
-    <h2>Settings</h2>
-    <div class="setting-row">
-      <input type="checkbox" id="alwaysNorthToggle">
-      <span class="setting-label">Always face north (disables mouse aiming)</span>
-    </div>
-    <div class="setting-row">
-      <input type="checkbox" id="mouseModeToggle">
-      <span class="setting-label">Mouse aiming mode</span>
-    </div>
-    <button id="backSettingsBtn">Done</button>
-  </div>
-
+ 
   <!-- Zoom slider overlay (shown during gameplay) -->
   <div id="zoomLabel">Zoom</div>
   <div id="zoomSlider">
     <input type="range" id="zoomInput" min="0.5" max="2.5" step="0.05" value="1">
   </div>
+ 
+  <!-- Mobile joysticks (shown only in mobile mode during gameplay) -->
+  <div id="mobileJoysticks" style="display: none; position: absolute; inset: 0; pointer-events: none; z-index: 20;">
+    <!-- Left joystick (movement) -->
+    <div id="leftJoystickBg" style="position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.15); border: 3px solid #ffb23f; pointer-events: auto;"></div>
+    <div id="leftJoystickHandle" style="position: absolute; bottom: 60px; left: 60px; width: 50px; height: 50px; border-radius: 50%; background: #ffb23f; border: 2px solid #fff; pointer-events: auto; box-shadow: 0 0 15px rgba(255,178,63,.8);"></div>
+    
+    <!-- Right joystick (fire + aim) -->
+    <div id="rightJoystickBg" style="position: absolute; bottom: 20px; right: 20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.15); border: 3px solid #49e3d0; pointer-events: auto;"></div>
+    <div id="rightJoystickHandle" style="position: absolute; bottom: 60px; right: 60px; width: 50px; height: 50px; border-radius: 50%; background: #49e3d0; border: 2px solid #fff; pointer-events: auto; box-shadow: 0 0 15px rgba(73,227,208,.8);"></div>
+    
+    <!-- Labels -->
+    <div style="position: absolute; bottom: 155px; left: 35px; color: #ffb23f; font-size: 12px; font-weight: 600; pointer-events: none;">MOVE</div>
+    <div style="position: absolute; bottom: 155px; right: 35px; color: #49e3d0; font-size: 12px; font-weight: 600; pointer-events: none;">FIRE</div>
+  </div>
 </div>
-
+ 
 <script>
 (() => {
 "use strict";
-
+ 
 const W = 1200, H = 780;
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
-
+ 
 const el = id => document.getElementById(id);
 const titleVeil = el('titleVeil'),
       deadVeil = el('deadVeil'), pauseVeil = el('pauseVeil');
-
+ 
 /* ---------- helpers ---------- */
 const rand = (a,b) => a + Math.random()*(b-a);
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const clamp = (v,a,b) => v<a?a:v>b?b:v;
 const dist2 = (a,b) => { const dx=a.x-b.x, dy=a.y-b.y; return dx*dx+dy*dy; };
-
+ 
 function loadBest(){
   try { return parseInt(localStorage.getItem('wb_best')||'0',10) || 0; }
   catch(e){ return 0; }
 }
 function saveBest(v){ try { localStorage.setItem('wb_best', String(v)); } catch(e){} }
 let best = loadBest();
-
+ 
 /* ---------- settings ---------- */
 let mouseMode = false;     // mouse aiming mode
-let alwaysNorth = false;   // always face north
+let alwaysCrosshair = false; // always face crosshair (center screen aim)
+let mobileMode = false;    // mobile UI enabled
 let mouseX = 0, mouseY = 0; // current mouse position
-
+ 
 function loadSettings(){
   try {
     const raw = JSON.parse(localStorage.getItem('wb_settings'));
     if(raw && typeof raw === 'object'){
       mouseMode = raw.mouseMode || false;
-      alwaysNorth = raw.alwaysNorth || false;
+      alwaysCrosshair = raw.alwaysCrosshair || false;
+      mobileMode = raw.mobileMode || false;
     }
   } catch(e){}
   updateSettingsUI();
 }
-
+ 
 function saveSettings(){
-  try { localStorage.setItem('wb_settings', JSON.stringify({ mouseMode, alwaysNorth })); }
+  try { localStorage.setItem('wb_settings', JSON.stringify({ mouseMode, alwaysCrosshair, mobileMode })); }
   catch(e){}
 }
-
+ 
 function updateSettingsUI(){
   el('mouseModeToggle').checked = mouseMode;
-  el('alwaysNorthToggle').checked = alwaysNorth;
+  el('alwaysCrosshairToggle').checked = alwaysCrosshair;
+  el('mobileModeToggle').checked = mobileMode;
 }
-
+ 
 loadSettings();
 const ROT_SPEED = 1.4; // radians/sec — smooth, continuous 360° turning (slower for precision)
 const PLAYER_COL = '#3ddc71';
 const CIRCLE_R = 10; // shared radius (px) — 0.5 grid square unit (20×20 grid)
 const DEFAULT_CONTROLS = { up:'w', down:'s', left:'a', right:'d', rotateLeft:'arrowleft', rotateRight:'arrowright', fire:' ' };
 const ACTION_LABEL = { up:'Move forward', down:'Move back', left:'Strafe left', right:'Strafe right', rotateLeft:'Turn left', rotateRight:'Turn right', fire:'Fire' };
-
+ 
 function loadControls(){
   try {
     const raw = JSON.parse(localStorage.getItem('wb_controls'));
@@ -254,7 +295,7 @@ function loadControls(){
 function saveControls(){ try { localStorage.setItem('wb_controls', JSON.stringify(CONTROLS)); } catch(e){} }
 let CONTROLS = loadControls();
 let rebindTarget = null;
-
+ 
 function keyLabel(k){
   if(k === ' ') return 'Space';
   if(k === 'arrowup') return '↑';
@@ -264,22 +305,30 @@ function keyLabel(k){
   if(k.length === 1) return k.toUpperCase();
   return k.charAt(0).toUpperCase() + k.slice(1);
 }
-
+ 
 /* ---------- state ---------- */
 const S = { TITLE:0, PLAY:1, DEAD:2, PAUSE:3 };
 let state = S.TITLE;
-
+ 
 let player, bullets, foes, foeShots, bits, drops;
 let wave, score, kills, shake, timeScale, spawnQueue, spawnTimer, waveBanner, hurtFlash;
 let zoomScale = 1; // zoom level (0.5x to 2.5x)
 const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5, ZOOM_STEP = 0.05;
-
+ 
+// Ammo system
+let ammo = 20;           // current ammo in magazine
+const MAGAZINE_SIZE = 20; // magazine capacity
+const RELOAD_TIME = 0.6;  // reload duration in seconds
+let reloadTimer = 0;      // reload progress
+const RPM = 725;          // rounds per minute
+const FIRE_DELAY = 60 / RPM; // convert RPM to fire delay (seconds)
+ 
 const keys = Object.create(null);
-
+ 
 function resetRun(){
   player = {
     x: W/2, y: H/2, r: CIRCLE_R, hp: 100, maxHp: 100,
-    speed: 235, dmg: 16, fireDelay: 0.24, cool: 0,
+    speed: 235, dmg: 16, fireDelay: FIRE_DELAY, cool: 0,
     bulletSpeed: 660, pierce: 0, shots: 1, spread: 0,
     aim: -Math.PI/2, recoil: 0, iframe: 0
   };
@@ -288,7 +337,7 @@ function resetRun(){
   waveBanner = null; spawnQueue = []; spawnTimer = 0;
   zoomScale = 1; // reset zoom to default
 }
-
+ 
 /* ---------- enemy blueprints ---------- */
 const FOE = {
   grunt:   { hp:30,  speed:72,  r:CIRCLE_R, dmg:11, col:'#ff4d4d', pts:10, from:1 },
@@ -297,7 +346,7 @@ const FOE = {
   shooter: { hp:44,  speed:62,  r:CIRCLE_R, dmg:0,  col:'#e11d48', pts:28, from:7, range:290, cadence:1.7 },
   boss:    { hp:520, speed:38,  r:CIRCLE_R, dmg:30, col:'#dc2626', pts:250, from:99 }
 };
-
+ 
 function spawnFoe(kind){
   const b = FOE[kind];
   // spawn just outside a random edge
@@ -307,7 +356,7 @@ function spawnFoe(kind){
   else if(side===1){ x = W+40; y = rand(0,H); }
   else if(side===2){ x = rand(0,W); y = H+40; }
   else { x = -40; y = rand(0,H); }
-
+ 
   const scale = 1 + (wave-1) * 0.07;
   const f = {
     kind, x, y, r: b.r, col: b.col, pts: b.pts,
@@ -319,7 +368,7 @@ function spawnFoe(kind){
   f.max = f.hp;
   foes.push(f);
 }
-
+ 
 /* ---------- wave building ---------- */
 function buildWave(n){
   const q = [];
@@ -341,14 +390,14 @@ function buildWave(n){
   for(let i=q.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [q[i],q[j]]=[q[j],q[i]]; }
   return q;
 }
-
+ 
 function startWave(n){
   wave = n;
   spawnQueue = buildWave(n);
   spawnTimer = 0.4;
   waveBanner = { t: 2.2, text: (n%5===0 ? 'Wave ' + n + ' — heavy contact' : 'Wave ' + n) };
 }
-
+ 
 /* ---------- upgrades ---------- */
 const UPGRADES = [
   { name:'Trigger spring', desc:'Fire about 18% faster.', ok:p=>p.fireDelay>0.075, use:p=>{ p.fireDelay *= 0.82; } },
@@ -360,7 +409,7 @@ const UPGRADES = [
   { name:'Hot loads', desc:'Bullets travel faster and hit for +3.', ok:p=>p.bulletSpeed<1100, use:p=>{ p.bulletSpeed *= 1.18; p.dmg += 3; } },
   { name:'Field medicine', desc:'Refill health to full right now.', ok:p=>p.hp < p.maxHp*0.95, use:p=>{ p.hp = p.maxHp; } }
 ];
-
+ 
 /* ---------- effects ---------- */
 function burst(x,y,col,n,spd){
   for(let i=0;i<n;i++){
@@ -368,7 +417,7 @@ function burst(x,y,col,n,spd){
     bits.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:rand(0.25,0.6), max:0.6, col, r:rand(1.5,3.4) });
   }
 }
-
+ 
 /* ---------- input ---------- */
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -390,12 +439,11 @@ addEventListener('keydown', e => {
       el('keysVeil').classList.remove('on');
       titleVeil.classList.add('on');
     }
-    else if(el('settingsVeil').classList.contains('on')){
-      el('settingsVeil').classList.remove('on');
-      titleVeil.classList.add('on');
-    }
     else if(state === S.PLAY){ state = S.PAUSE; pauseVeil.classList.add('on'); }
     else if(state === S.PAUSE){ pauseVeil.classList.remove('on'); state = S.PLAY; }
+  }
+  if(k === 'r' && state === S.PLAY && ammo < MAGAZINE_SIZE && reloadTimer <= 0){
+    reloadTimer = RELOAD_TIME; // start reload
   }
   const bound = Object.values(CONTROLS);
   if(bound.includes(k) || ['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
@@ -405,7 +453,7 @@ addEventListener('blur', () => {
   for(const k in keys) keys[k] = false;
   if(state === S.PLAY){ state = S.PAUSE; pauseVeil.classList.add('on'); }
 });
-
+ 
 el('startBtn').addEventListener('click', () => {
   titleVeil.classList.remove('on');
   resetRun(); state = S.PLAY; startWave(1);
@@ -424,7 +472,7 @@ function renderKeyHints(){
     '<div class="key"><span class="cap">' + keyLabel(CONTROLS.fire) + '</span>Fire</div>' +
     '<div class="key"><span class="cap">Esc</span>Pause</div>';
 }
-
+ 
 function renderKeysUI(){
   const list = el('rebindList');
   list.innerHTML = '';
@@ -442,7 +490,7 @@ function renderKeysUI(){
   });
   renderKeyHints();
 }
-
+ 
 el('openKeysBtn').addEventListener('click', () => {
   titleVeil.classList.remove('on');
   renderKeysUI();
@@ -458,51 +506,196 @@ el('resetKeysBtn').addEventListener('click', () => {
   saveControls();
   renderKeysUI();
 });
-
-// Settings button
-const settingsBtn = document.createElement('button');
-settingsBtn.id = 'openSettingsBtn';
-settingsBtn.className = 'ghost';
-settingsBtn.style.marginTop = '8px';
-settingsBtn.textContent = 'Settings';
-el('titleVeil').appendChild(settingsBtn);
-
-settingsBtn.addEventListener('click', () => {
-  titleVeil.classList.remove('on');
-  updateSettingsUI();
-  el('settingsVeil').classList.add('on');
-});
-
-el('backSettingsBtn').addEventListener('click', () => {
-  el('settingsVeil').classList.remove('on');
-  titleVeil.classList.add('on');
-});
-
+ 
+// Mouse mode toggle
 el('mouseModeToggle').addEventListener('change', () => {
   mouseMode = el('mouseModeToggle').checked;
   saveSettings();
 });
-
-el('alwaysNorthToggle').addEventListener('change', () => {
-  alwaysNorth = el('alwaysNorthToggle').checked;
+ 
+el('alwaysCrosshairToggle').addEventListener('change', () => {
+  alwaysCrosshair = el('alwaysCrosshairToggle').checked;
+  if(alwaysCrosshair) mouseMode = false; // disable mouse mode when crosshair mode is on
+  el('mouseModeToggle').checked = false;
   saveSettings();
 });
-
+ 
+el('mobileModeToggle').addEventListener('change', () => {
+  mobileMode = el('mobileModeToggle').checked;
+  saveSettings();
+});
+ 
+// Platform button listeners
+if(el('desktopModeBtn')) {
+  el('desktopModeBtn').addEventListener('click', () => {
+    mobileMode = false;
+    el('mobileModeToggle').checked = false;
+    saveSettings();
+    el('desktopModeBtn').style.background = '#49e3d0';
+    el('desktopModeBtn').style.color = '#0a0d16';
+    el('mobilePlatformBtn').style.background = 'rgba(73,227,208,.3)';
+    el('mobilePlatformBtn').style.color = '#49e3d0';
+  });
+}
+ 
+if(el('mobilePlatformBtn')) {
+  el('mobilePlatformBtn').addEventListener('click', () => {
+    mobileMode = true;
+    el('mobileModeToggle').checked = true;
+    saveSettings();
+    el('mobilePlatformBtn').style.background = '#49e3d0';
+    el('mobilePlatformBtn').style.color = '#0a0d16';
+    el('desktopModeBtn').style.background = 'rgba(73,227,208,.3)';
+    el('desktopModeBtn').style.color = '#49e3d0';
+  });
+}
+ 
 // Zoom slider input
 el('zoomInput').addEventListener('input', (e) => {
   zoomScale = parseFloat(e.target.value);
 });
-
-// Mouse tracking
+ 
+// Mobile joystick input handling
+let leftJoystickActive = false, rightJoystickActive = false;
+let leftJoystickId = null, rightJoystickId = null;
+ 
+const LEFT_JOYSTICK_X = 80, LEFT_JOYSTICK_Y = 80; // 20px + 60px (60px from center of 120px circle)
+const RIGHT_JOYSTICK_X = -80, RIGHT_JOYSTICK_Y = 80; // bottom-right
+const JOYSTICK_RADIUS = 60; // max distance from center (120px diameter)
+const JOYSTICK_DEAD_ZONE = 8; // pixels
+ 
+function showMobileJoysticks(){
+  if(mobileMode && state === S.PLAY){
+    el('mobileJoysticks').style.display = 'block';
+  } else {
+    el('mobileJoysticks').style.display = 'none';
+  }
+}
+ 
+addEventListener('touchstart', (e) => {
+  if(!mobileMode || state !== S.PLAY) return;
+  const rect = cv.getBoundingClientRect();
+  
+  for(let touch of e.touches){
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    // Left joystick (bottom-left) - center at (80, H-80)
+    const leftCenterX = LEFT_JOYSTICK_X;
+    const leftCenterY = rect.height - LEFT_JOYSTICK_Y;
+    const leftDist = Math.hypot(x - leftCenterX, y - leftCenterY);
+    
+    if(leftDist < 80 && !leftJoystickActive){
+      leftJoystickActive = true;
+      leftJoystickId = touch.identifier;
+    }
+    
+    // Right joystick (bottom-right) - center at (W-80, H-80)
+    const rightCenterX = rect.width - LEFT_JOYSTICK_X;
+    const rightCenterY = rect.height - LEFT_JOYSTICK_Y;
+    const rightDist = Math.hypot(x - rightCenterX, y - rightCenterY);
+    
+    if(rightDist < 80 && !rightJoystickActive){
+      rightJoystickActive = true;
+      rightJoystickId = touch.identifier;
+    }
+  }
+}, false);
+ 
+addEventListener('touchmove', (e) => {
+  if(!mobileMode || state !== S.PLAY) return;
+  const rect = cv.getBoundingClientRect();
+  
+  for(let touch of e.touches){
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    // Update left joystick (movement)
+    if(touch.identifier === leftJoystickId && leftJoystickActive){
+      const centerX = LEFT_JOYSTICK_X;
+      const centerY = rect.height - LEFT_JOYSTICK_Y;
+      const dx = x - centerX;
+      const dy = centerY - y;  // FLIP: centerY - y so UP is positive
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      
+      const clampedDist = Math.min(dist, JOYSTICK_RADIUS);
+      const handleX = centerX + Math.cos(angle) * clampedDist;
+      const handleY = centerY - Math.sin(angle) * clampedDist;  // FLIP for display
+      
+      el('leftJoystickHandle').style.left = (handleX - 25) + 'px';
+      el('leftJoystickHandle').style.bottom = (rect.height - handleY - 25) + 'px';
+      
+      if(dist > JOYSTICK_DEAD_ZONE){
+        keys[CONTROLS.up] = Math.sin(angle) > 0.3;
+        keys[CONTROLS.down] = Math.sin(angle) < -0.3;
+        keys[CONTROLS.right] = Math.cos(angle) > 0.3;
+        keys[CONTROLS.left] = Math.cos(angle) < -0.3;
+      } else {
+        keys[CONTROLS.up] = keys[CONTROLS.down] = keys[CONTROLS.left] = keys[CONTROLS.right] = false;
+      }
+    }
+    
+    // Update right joystick (fire + aim) - TAKES PRIORITY OVER OTHER MODES
+    if(touch.identifier === rightJoystickId && rightJoystickActive){
+      const centerX = rect.width - LEFT_JOYSTICK_X;
+      const centerY = rect.height - LEFT_JOYSTICK_Y;
+      const dx = x - centerX;
+      const dy = centerY - y;  // FLIP: centerY - y so UP is positive
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      const aimAngle = -angle;  // NEGATE: fix inverted aiming
+      
+      const clampedDist = Math.min(dist, JOYSTICK_RADIUS);
+      const handleX = centerX + Math.cos(aimAngle) * clampedDist;
+      const handleY = centerY - Math.sin(aimAngle) * clampedDist;
+      
+      el('rightJoystickHandle').style.right = (rect.width - handleX - 25) + 'px';
+      el('rightJoystickHandle').style.bottom = (rect.height - handleY - 25) + 'px';
+      
+      if(dist > JOYSTICK_DEAD_ZONE){
+        player.aim = aimAngle;  // Use negated angle
+        keys[CONTROLS.fire] = true;
+      } else {
+        keys[CONTROLS.fire] = false;
+      }
+    }
+  }
+}, false);
+ 
+addEventListener('touchend', (e) => {
+  for(let touch of e.changedTouches){
+    if(touch.identifier === leftJoystickId){
+      leftJoystickActive = false;
+      leftJoystickId = null;
+      el('leftJoystickHandle').style.left = '60px';
+      el('leftJoystickHandle').style.bottom = '60px';
+      keys[CONTROLS.up] = keys[CONTROLS.down] = keys[CONTROLS.left] = keys[CONTROLS.right] = false;
+    }
+    if(touch.identifier === rightJoystickId){
+      rightJoystickActive = false;
+      rightJoystickId = null;
+      el('rightJoystickHandle').style.right = '60px';
+      el('rightJoystickHandle').style.bottom = '60px';
+      keys[CONTROLS.fire] = false;
+    }
+  }
+}, false);
+ 
+// Mouse tracking - convert screen coords to world coords accounting for camera and zoom
 addEventListener('mousemove', (e) => {
   const rect = cv.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) * (1200 / rect.width);
-  mouseY = (e.clientY - rect.top) * (780 / rect.height);
+  // Screen position (0 to canvas size)
+  const screenX = (e.clientX - rect.left) * (1200 / rect.width);
+  const screenY = (e.clientY - rect.top) * (780 / rect.height);
+  // Convert to world coordinates: account for camera center, zoom, and player offset
+  mouseX = (screenX - W/2) / zoomScale + player.x;
+  mouseY = (screenY - H/2) / zoomScale + player.y;
 });
-
+ 
 renderKeyHints();
 el('bestHint').textContent = best ? 'Best score so far: ' + best : '';
-
+ 
 /* ---------- firing ---------- */
 function fire(){
   const base = player.aim;
@@ -518,8 +711,10 @@ function fire(){
   player.cool = player.fireDelay;
   player.recoil = 1;
   shake = Math.min(shake + 1.6, 9);
+  ammo--; // consume ammo
+  burst(player.x + Math.cos(player.aim)*18, player.y + Math.sin(player.aim)*18, '#ffb23f', 3, 200);
 }
-
+ 
 /* ---------- update ---------- */
 function update(dt){
   // player — movement relative to facing direction (W = forward, S = back, A = strafe left, D = strafe right)
@@ -538,25 +733,45 @@ function update(dt){
   }
   player.x = clamp(player.x + forward*player.speed*dt, player.r, W-player.r);
   player.y = clamp(player.y + strafe*player.speed*dt, player.r, H-player.r);
-
+ 
   if(keys[CONTROLS.rotateLeft]) player.aim -= ROT_SPEED*dt;
   if(keys[CONTROLS.rotateRight]) player.aim += ROT_SPEED*dt;
-
-  // Apply settings: always-north or mouse aiming
-  if(alwaysNorth){
-    player.aim = -Math.PI/2; // always face up (north)
-  } else if(mouseMode){
-    // mouse aiming: aim towards mouse cursor
-    const dx = mouseX - player.x;
-    const dy = mouseY - player.y;
-    player.aim = Math.atan2(dy, dx);
+ 
+  // Apply settings: always-crosshair or mouse aiming
+  // BUT: skip if right joystick (mobile aim) is being used
+  if(!rightJoystickActive){
+    if(alwaysCrosshair && !keys[CONTROLS.rotateLeft] && !keys[CONTROLS.rotateRight]){
+      // crosshair mode: aim toward screen center UNLESS arrow keys are being pressed
+      player.aim = Math.atan2(0, 1); // aim right (center crosshair default direction)
+    } else if(mouseMode){
+      // mouse aiming: aim towards mouse cursor
+      const dx = mouseX - player.x;
+      const dy = mouseY - player.y;
+      player.aim = Math.atan2(dy, dx);
+    }
   }
-
+ 
   player.cool -= dt;
   player.recoil = Math.max(0, player.recoil - dt*6);
   player.iframe = Math.max(0, player.iframe - dt);
-  if(keys[CONTROLS.fire] && player.cool <= 0) fire();
-
+  
+  // Reload system
+  if(reloadTimer > 0){
+    reloadTimer -= dt;
+    if(reloadTimer <= 0){
+      ammo = MAGAZINE_SIZE; // reload complete
+      reloadTimer = 0;
+    }
+  }
+  
+  // Auto-reload when out of ammo (and not already reloading)
+  if(ammo === 0 && reloadTimer === 0){
+    reloadTimer = RELOAD_TIME;
+  }
+  
+  // Fire (only if ammo and not reloading)
+  if(keys[CONTROLS.fire] && player.cool <= 0 && ammo > 0 && reloadTimer <= 0) fire();
+ 
   // spawns
   if(spawnQueue.length){
     spawnTimer -= dt;
@@ -565,7 +780,7 @@ function update(dt){
       spawnTimer = rand(0.18, 0.62);
     }
   }
-
+ 
   // bullets
   for(let i=bullets.length-1;i>=0;i--){
     const b = bullets[i];
@@ -583,17 +798,17 @@ function update(dt){
       }
     }
   }
-
+ 
   // foes
   for(let i=foes.length-1;i>=0;i--){
     const f = foes[i];
     f.hitFlash = Math.max(0, f.hitFlash - dt);
     f.kick = Math.max(0, f.kick - dt*5);
     f.wob += dt*4;
-
+ 
     const dx = player.x-f.x, dy = player.y-f.y;
     const d = Math.hypot(dx,dy) || 1;
-
+ 
     if(f.kind === 'shooter'){
       const want = FOE.shooter.range;
       const dir = d > want+30 ? 1 : (d < want-50 ? -1 : 0);
@@ -617,7 +832,7 @@ function update(dt){
       }
     }
     f.x = clamp(f.x, -60, W+60); f.y = clamp(f.y, -60, H+60);
-
+ 
     // separation
     for(const g of foes){
       if(g===f) continue;
@@ -629,13 +844,13 @@ function update(dt){
         f.x += (ddx/len)*push; f.y += (ddy/len)*push;
       }
     }
-
+ 
     // touch damage
     if(f.dmg > 0 && player.iframe <= 0){
       const rr = f.r + player.r;
       if(dist2(f,player) < rr*rr) hurtPlayer(f.dmg);
     }
-
+ 
     if(f.hp <= 0){
       foes.splice(i,1);
       kills++; score += f.pts;
@@ -645,7 +860,7 @@ function update(dt){
         drops.push({ x:f.x, y:f.y, r:9, t:0, heal: f.kind==='boss'?45:22 });
     }
   }
-
+ 
   // enemy shots
   for(let i=foeShots.length-1;i>=0;i--){
     const s = foeShots[i];
@@ -656,7 +871,7 @@ function update(dt){
       hurtPlayer(s.dmg); foeShots.splice(i,1);
     }
   }
-
+ 
   // pickups
   for(let i=drops.length-1;i>=0;i--){
     const p = drops[i];
@@ -668,7 +883,7 @@ function update(dt){
       drops.splice(i,1);
     } else if(p.t > 14){ drops.splice(i,1); }
   }
-
+ 
   // particles
   for(let i=bits.length-1;i>=0;i--){
     const b = bits[i];
@@ -677,18 +892,18 @@ function update(dt){
     b.life -= dt;
     if(b.life <= 0) bits.splice(i,1);
   }
-
+ 
   shake = Math.max(0, shake - dt*26);
   hurtFlash = Math.max(0, hurtFlash - dt*2.2);
   if(waveBanner){ waveBanner.t -= dt; if(waveBanner.t <= 0) waveBanner = null; }
-
+ 
   // wave complete?
   if(state === S.PLAY && spawnQueue.length === 0 && foes.length === 0){
     score += 25 + wave*15;
     startWave(wave + 1);  // no upgrades in hardcore mode — go straight to next wave
   }
 }
-
+ 
 function hurtPlayer(d){
   player.hp -= d;
   player.iframe = 0.55;
@@ -706,7 +921,7 @@ function hurtPlayer(d){
     state = S.DEAD;
   }
 }
-
+ 
 /* ---------- draw ---------- */
 function drawGrid(){
   ctx.fillStyle = '#121829';
@@ -721,14 +936,14 @@ function drawGrid(){
   ctx.lineWidth = 2;
   ctx.strokeRect(1,1,W-2,H-2);
 }
-
+ 
 function glowCircle(x,y,r,col,alpha){
   ctx.globalAlpha = alpha;
   ctx.fillStyle = col;
   ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
   ctx.globalAlpha = 1;
 }
-
+ 
 function drawOrb(x, y, r, angle, col, opts){
   opts = opts || {};
   const flash = opts.flash;
@@ -744,13 +959,13 @@ function drawOrb(x, y, r, angle, col, opts){
   ctx.beginPath(); ctx.arc(fx, fy, r*0.22, 0, 6.2832); ctx.fill();
   ctx.restore();
 }
-
+ 
 function drawFoe(f){
   const p = 1 + f.kick*0.12;
   const flash = f.hitFlash > 0;
   const angle = Math.atan2(player.y-f.y, player.x-f.x);
   drawOrb(f.x, f.y, f.r*p, angle, f.col, { flash, glowAlpha: f.kind==='boss' ? 0.2 : 0.1 });
-
+ 
   if(f.kind === 'boss'){
     const bw = 260, bx = W/2 - bw/2, by = 26;
     ctx.fillStyle = 'rgba(10,13,22,.7)';
@@ -764,12 +979,12 @@ function drawFoe(f){
     ctx.fillRect(f.x-f.r, f.y-f.r-10, f.r*2*clamp(f.hp/f.max,0,1), 4);
   }
 }
-
+ 
 function drawPlayer(){
   const blink = player.iframe > 0 && Math.floor(player.iframe*20)%2===0;
   drawOrb(player.x, player.y, player.r, player.aim, PLAYER_COL, { flash: blink, recoil: player.recoil });
 }
-
+ 
 function drawHUD(){
   // health
   const bw = 230;
@@ -785,7 +1000,17 @@ function drawHUD(){
   ctx.fillStyle = '#0a0d16';
   ctx.textAlign = 'left';
   ctx.fillText(Math.ceil(player.hp) + ' / ' + player.maxHp, 27, 32);
-
+ 
+  // ammo display
+  const ammoColor = reloadTimer > 0 ? '#8b95b4' : (ammo === 0 ? '#ff4d78' : '#49e3d0');
+  ctx.fillStyle = ammoColor;
+  ctx.font = '600 13px "Chakra Petch", sans-serif';
+  ctx.fillText(ammo + ' / ' + MAGAZINE_SIZE + ' rounds', 27, 52);
+  if(reloadTimer > 0){
+    ctx.fillStyle = '#ffb23f';
+    ctx.fillText('RELOADING...', 27, 52);
+  }
+ 
   ctx.textAlign = 'right';
   ctx.fillStyle = '#e8ecf7';
   ctx.font = '700 22px "Chakra Petch", sans-serif';
@@ -793,13 +1018,13 @@ function drawHUD(){
   ctx.font = '600 15px "Chakra Petch", sans-serif';
   ctx.fillStyle = '#8b95b4';
   ctx.fillText(score + ' pts   ·   ' + kills + ' down', W-20, 57);
-
+ 
   const left = foes.length + spawnQueue.length;
   ctx.textAlign = 'left';
   ctx.fillStyle = '#8b95b4';
   ctx.font = '600 14px "Chakra Petch", sans-serif';
   ctx.fillText(left + ' left', 20, 56);
-
+ 
   if(waveBanner){
     const a = clamp(waveBanner.t/0.6, 0, 1);
     ctx.globalAlpha = a;
@@ -811,7 +1036,7 @@ function drawHUD(){
   }
   ctx.textAlign = 'left';
 }
-
+ 
 function aimRayHit(){
   const dx = Math.cos(player.aim), dy = Math.sin(player.aim);
   let dist = Infinity;
@@ -833,20 +1058,20 @@ function aimRayHit(){
   }
   return { dist, hitEnemy };
 }
-
+ 
 function drawAimGuide(){
   const dx = Math.cos(player.aim), dy = Math.sin(player.aim);
   const ray = aimRayHit();
   const sx = player.x + dx*(player.r+6), sy = player.y + dy*(player.r+6);
   const ex = player.x + dx*ray.dist, ey = player.y + dy*ray.dist;
-
+ 
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,.35)';
   ctx.lineWidth = 2;
   ctx.setLineDash([7,7]);
   ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(ex,ey); ctx.stroke();
   ctx.setLineDash([]);
-
+ 
   const rr = ray.hitEnemy ? 6 : 11; // reticle shrinks once it's touching an enemy
   ctx.strokeStyle = ray.hitEnemy ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.5)';
   ctx.beginPath(); ctx.arc(ex, ey, rr, 0, 6.2832); ctx.stroke();
@@ -858,7 +1083,7 @@ function drawAimGuide(){
   });
   ctx.restore();
 }
-
+ 
 function render(){
   ctx.setTransform(1,0,0,1,0,0);
   const sx = shake ? rand(-shake,shake)*0.4 : 0;
@@ -870,7 +1095,7 @@ function render(){
   ctx.scale(zoomScale, zoomScale);
   ctx.translate(-player.x, -player.y);
   drawGrid();
-
+ 
   // pickups
   for(const p of drops){
     const pulse = 1 + Math.sin(p.t*6)*0.12;
@@ -879,7 +1104,7 @@ function render(){
     ctx.fillRect(p.x-8*pulse, p.y-2.5*pulse, 16*pulse, 5*pulse);
     ctx.fillRect(p.x-2.5*pulse, p.y-8*pulse, 5*pulse, 16*pulse);
   }
-
+ 
   // particles
   for(const b of bits){
     ctx.globalAlpha = clamp(b.life/b.max,0,1);
@@ -887,9 +1112,9 @@ function render(){
     ctx.fillRect(b.x-b.r/2, b.y-b.r/2, b.r, b.r);
   }
   ctx.globalAlpha = 1;
-
+ 
   for(const f of foes) drawFoe(f);
-
+ 
   // bullets
   for(const b of bullets){
     ctx.strokeStyle = '#ffe2a8';
@@ -904,11 +1129,11 @@ function render(){
     ctx.fillStyle = '#49e3d0';
     ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.2832); ctx.fill();
   }
-
+ 
   if(state !== S.TITLE) drawAimGuide();
   if(state !== S.TITLE) drawPlayer();
   ctx.restore();
-
+ 
   if(hurtFlash > 0){
     ctx.fillStyle = 'rgba(255,77,120,' + (hurtFlash*0.22) + ')';
     ctx.fillRect(0,0,W,H);
@@ -924,8 +1149,15 @@ function render(){
     el('zoomSlider').classList.remove('show');
     el('zoomLabel').classList.remove('show');
   }
+  
+  // Show/hide mobile joysticks
+  if(mobileMode && state === S.PLAY){
+    el('mobileJoysticks').style.display = 'block';
+  } else {
+    el('mobileJoysticks').style.display = 'none';
+  }
 }
-
+ 
 /* ---------- loop ---------- */
 let last = performance.now();
 function loop(now){
@@ -938,7 +1170,7 @@ function loop(now){
 }
 resetRun();
 requestAnimationFrame(loop);
-
+ 
 })();
 </script>
 </body>
