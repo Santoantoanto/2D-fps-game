@@ -167,10 +167,6 @@
         <input type="checkbox" id="alwaysCrosshairToggle">
         <span class="setting-label">Always face crosshair (center screen)</span>
       </div>
-      <div class="setting-row">
-        <input type="checkbox" id="mobileModeToggle">
-        <span class="setting-label">Mobile mode (virtual joysticks)</span>
-      </div>
       
       <hr style="border: none; border-top: 1px solid rgba(139,149,180,.2); margin: 16px 0;">
       
@@ -253,7 +249,7 @@ let best = loadBest();
 let mouseMode = false;     // mouse aiming mode
 let alwaysCrosshair = false; // always face crosshair (center screen aim)
 let mobileMode = false;    // mobile UI enabled
-let mouseX = 0, mouseY = 0; // current mouse position
+let mouseX = 0, mouseY = 0; // mouse offset from screen center (not world coordinates)
  
 function loadSettings(){
   try {
@@ -275,7 +271,6 @@ function saveSettings(){
 function updateSettingsUI(){
   el('mouseModeToggle').checked = mouseMode;
   el('alwaysCrosshairToggle').checked = alwaysCrosshair;
-  el('mobileModeToggle').checked = mobileMode;
 }
  
 loadSettings();
@@ -520,16 +515,10 @@ el('alwaysCrosshairToggle').addEventListener('change', () => {
   saveSettings();
 });
  
-el('mobileModeToggle').addEventListener('change', () => {
-  mobileMode = el('mobileModeToggle').checked;
-  saveSettings();
-});
- 
 // Platform button listeners
 if(el('desktopModeBtn')) {
   el('desktopModeBtn').addEventListener('click', () => {
     mobileMode = false;
-    el('mobileModeToggle').checked = false;
     saveSettings();
     el('desktopModeBtn').style.background = '#49e3d0';
     el('desktopModeBtn').style.color = '#0a0d16';
@@ -541,7 +530,6 @@ if(el('desktopModeBtn')) {
 if(el('mobilePlatformBtn')) {
   el('mobilePlatformBtn').addEventListener('click', () => {
     mobileMode = true;
-    el('mobileModeToggle').checked = true;
     saveSettings();
     el('mobilePlatformBtn').style.background = '#49e3d0';
     el('mobilePlatformBtn').style.color = '#0a0d16';
@@ -558,6 +546,8 @@ el('zoomInput').addEventListener('input', (e) => {
 // Mobile joystick input handling
 let leftJoystickActive = false, rightJoystickActive = false;
 let leftJoystickId = null, rightJoystickId = null;
+let lastAim = -Math.PI/2; // preserve aim direction when joystick released (default: North/Up)
+let mobileAimActive = false; // flag to prevent mode overrides of mobile aim
  
 const LEFT_JOYSTICK_X = 80, LEFT_JOYSTICK_Y = 80; // 20px + 60px (60px from center of 120px circle)
 const RIGHT_JOYSTICK_X = -80, RIGHT_JOYSTICK_Y = 80; // bottom-right
@@ -575,14 +565,17 @@ function showMobileJoysticks(){
 addEventListener('touchstart', (e) => {
   if(!mobileMode || state !== S.PLAY) return;
   const rect = cv.getBoundingClientRect();
+  const scaleX = W / rect.width;    // 1200 / CSS width
+  const scaleY = H / rect.height;   // 780 / CSS height
   
   for(let touch of e.touches){
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    // Convert to canvas internal coordinates
+    const x = (touch.clientX - rect.left) * scaleX;
+    const y = (touch.clientY - rect.top) * scaleY;
     
-    // Left joystick (bottom-left) - center at (80, H-80)
+    // Left joystick (bottom-left) - center at (80, 780-80=700)
     const leftCenterX = LEFT_JOYSTICK_X;
-    const leftCenterY = rect.height - LEFT_JOYSTICK_Y;
+    const leftCenterY = H - LEFT_JOYSTICK_Y;
     const leftDist = Math.hypot(x - leftCenterX, y - leftCenterY);
     
     if(leftDist < 80 && !leftJoystickActive){
@@ -590,9 +583,9 @@ addEventListener('touchstart', (e) => {
       leftJoystickId = touch.identifier;
     }
     
-    // Right joystick (bottom-right) - center at (W-80, H-80)
-    const rightCenterX = rect.width - LEFT_JOYSTICK_X;
-    const rightCenterY = rect.height - LEFT_JOYSTICK_Y;
+    // Right joystick (bottom-right) - center at (1200-80=1120, 780-80=700)
+    const rightCenterX = W - LEFT_JOYSTICK_X;
+    const rightCenterY = H - LEFT_JOYSTICK_Y;
     const rightDist = Math.hypot(x - rightCenterX, y - rightCenterY);
     
     if(rightDist < 80 && !rightJoystickActive){
@@ -605,15 +598,18 @@ addEventListener('touchstart', (e) => {
 addEventListener('touchmove', (e) => {
   if(!mobileMode || state !== S.PLAY) return;
   const rect = cv.getBoundingClientRect();
+  const scaleX = W / rect.width;    // 1200 / CSS width
+  const scaleY = H / rect.height;   // 780 / CSS height
   
   for(let touch of e.touches){
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    // Convert to canvas internal coordinates
+    const x = (touch.clientX - rect.left) * scaleX;
+    const y = (touch.clientY - rect.top) * scaleY;
     
     // Update left joystick (movement)
     if(touch.identifier === leftJoystickId && leftJoystickActive){
       const centerX = LEFT_JOYSTICK_X;
-      const centerY = rect.height - LEFT_JOYSTICK_Y;
+      const centerY = H - LEFT_JOYSTICK_Y;
       const dx = x - centerX;
       const dy = centerY - y;  // FLIP: centerY - y so UP is positive
       const dist = Math.hypot(dx, dy);
@@ -623,8 +619,11 @@ addEventListener('touchmove', (e) => {
       const handleX = centerX + Math.cos(angle) * clampedDist;
       const handleY = centerY - Math.sin(angle) * clampedDist;  // FLIP for display
       
-      el('leftJoystickHandle').style.left = (handleX - 25) + 'px';
-      el('leftJoystickHandle').style.bottom = (rect.height - handleY - 25) + 'px';
+      // Convert to CSS coordinates for display
+      const handleXCss = (handleX / W) * rect.width;
+      const handleYCss = (handleY / H) * rect.height;
+      el('leftJoystickHandle').style.left = (handleXCss - 25) + 'px';
+      el('leftJoystickHandle').style.bottom = (rect.height - handleYCss - 25) + 'px';
       
       if(dist > JOYSTICK_DEAD_ZONE){
         keys[CONTROLS.up] = Math.sin(angle) > 0.3;
@@ -638,8 +637,8 @@ addEventListener('touchmove', (e) => {
     
     // Update right joystick (fire + aim) - TAKES PRIORITY OVER OTHER MODES
     if(touch.identifier === rightJoystickId && rightJoystickActive){
-      const centerX = rect.width - LEFT_JOYSTICK_X;
-      const centerY = rect.height - LEFT_JOYSTICK_Y;
+      const centerX = W - LEFT_JOYSTICK_X;
+      const centerY = H - LEFT_JOYSTICK_Y;
       const dx = x - centerX;
       const dy = centerY - y;  // FLIP: centerY - y so UP is positive
       const dist = Math.hypot(dx, dy);
@@ -650,11 +649,16 @@ addEventListener('touchmove', (e) => {
       const handleX = centerX + Math.cos(aimAngle) * clampedDist;
       const handleY = centerY - Math.sin(aimAngle) * clampedDist;
       
-      el('rightJoystickHandle').style.right = (rect.width - handleX - 25) + 'px';
-      el('rightJoystickHandle').style.bottom = (rect.height - handleY - 25) + 'px';
+      // Convert back to CSS coordinates for display
+      const handleXCss = (handleX / W) * rect.width;
+      const handleYCss = (handleY / H) * rect.height;
+      el('rightJoystickHandle').style.right = (rect.width - handleXCss - 25) + 'px';
+      el('rightJoystickHandle').style.bottom = (rect.height - handleYCss - 25) + 'px';
       
       if(dist > JOYSTICK_DEAD_ZONE){
         player.aim = aimAngle;  // Use negated angle
+        lastAim = aimAngle;  // SAVE: preserve this aim when joystick released
+        mobileAimActive = true;  // flag that mobile is controlling aim
         keys[CONTROLS.fire] = true;
       } else {
         keys[CONTROLS.fire] = false;
@@ -678,19 +682,20 @@ addEventListener('touchend', (e) => {
       el('rightJoystickHandle').style.right = '60px';
       el('rightJoystickHandle').style.bottom = '60px';
       keys[CONTROLS.fire] = false;
+      player.aim = lastAim;  // RESTORE: keep last aim direction when joystick released
     }
   }
 }, false);
  
-// Mouse tracking - convert screen coords to world coords accounting for camera and zoom
+// Mouse tracking - store screen-relative offset from center (not affected by player movement)
 addEventListener('mousemove', (e) => {
   const rect = cv.getBoundingClientRect();
   // Screen position (0 to canvas size)
   const screenX = (e.clientX - rect.left) * (1200 / rect.width);
   const screenY = (e.clientY - rect.top) * (780 / rect.height);
-  // Convert to world coordinates: account for camera center, zoom, and player offset
-  mouseX = (screenX - W/2) / zoomScale + player.x;
-  mouseY = (screenY - H/2) / zoomScale + player.y;
+  // Store only the offset from screen center, not absolute world coordinates
+  mouseX = (screenX - W/2) / zoomScale;
+  mouseY = (screenY - H/2) / zoomScale;
 });
  
 renderKeyHints();
@@ -717,37 +722,49 @@ function fire(){
  
 /* ---------- update ---------- */
 function update(dt){
-  // player — movement relative to facing direction (W = forward, S = back, A = strafe left, D = strafe right)
-  let forward = (keys[CONTROLS.up]?1:0) - (keys[CONTROLS.down]?1:0);
-  let strafe = (keys[CONTROLS.right]?1:0) - (keys[CONTROLS.left]?1:0);
-  const mlen = Math.hypot(forward, strafe);
-  if(mlen > 0){
-    forward/=mlen; strafe/=mlen;
-    // Rotate movement by player's facing angle (W moves forward in aim direction)
-    const cos_a = Math.cos(player.aim);
-    const sin_a = Math.sin(player.aim);
-    const rotated_forward = forward*cos_a - strafe*sin_a;
-    const rotated_strafe = forward*sin_a + strafe*cos_a;
-    forward = rotated_forward;
-    strafe = rotated_strafe;
+  // In crosshair mode: W/A/S/D control AIM direction, not movement
+  // In normal mode: W/A/S/D control movement relative to facing
+  
+  let forward, strafe;
+  
+  if(alwaysCrosshair){
+    // CROSSHAIR MODE: Use arrow keys to rotate aim, WASD for movement (absolute directions)
+    // Movement handled below in normal way
+    forward = (keys[CONTROLS.up]?1:0) - (keys[CONTROLS.down]?1:0);
+    strafe = (keys[CONTROLS.right]?1:0) - (keys[CONTROLS.left]?1:0);
+    // No rotation applied - movement is absolute
+    const mlen = Math.hypot(forward, strafe);
+    if(mlen > 0){
+      forward/=mlen;
+      strafe/=mlen;
+    }
+  } else {
+    // NORMAL MODE: W/A/S/D control movement in absolute directions
+    // W = North (up), S = South (down), A = West (left), D = East (right)
+    // Movement is NOT relative to facing direction
+    forward = (keys[CONTROLS.up]?1:0) - (keys[CONTROLS.down]?1:0);
+    strafe = (keys[CONTROLS.right]?1:0) - (keys[CONTROLS.left]?1:0);
+    // No rotation applied - movement is absolute
+    const mlen = Math.hypot(forward, strafe);
+    if(mlen > 0){
+      forward/=mlen;
+      strafe/=mlen;
+    }
   }
-  player.x = clamp(player.x + forward*player.speed*dt, player.r, W-player.r);
-  player.y = clamp(player.y + strafe*player.speed*dt, player.r, H-player.r);
+  
+  player.x = clamp(player.x + strafe*player.speed*dt, player.r, W-player.r);
+  player.y = clamp(player.y - forward*player.speed*dt, player.r, H-player.r);
  
+  // Arrow key rotation - ENABLED in all modes including crosshair
   if(keys[CONTROLS.rotateLeft]) player.aim -= ROT_SPEED*dt;
   if(keys[CONTROLS.rotateRight]) player.aim += ROT_SPEED*dt;
  
-  // Apply settings: always-crosshair or mouse aiming
-  // BUT: skip if right joystick (mobile aim) is being used
-  if(!rightJoystickActive){
-    if(alwaysCrosshair && !keys[CONTROLS.rotateLeft] && !keys[CONTROLS.rotateRight]){
-      // crosshair mode: aim toward screen center UNLESS arrow keys are being pressed
-      player.aim = Math.atan2(0, 1); // aim right (center crosshair default direction)
-    } else if(mouseMode){
-      // mouse aiming: aim towards mouse cursor
-      const dx = mouseX - player.x;
-      const dy = mouseY - player.y;
-      player.aim = Math.atan2(dy, dx);
+  // Apply settings: mouse aiming (but not in crosshair mode, and not if joystick active)
+  // Update continuously for smooth crosshair following
+  if(!rightJoystickActive && !alwaysCrosshair){
+    if(mouseMode){
+      // mouse aiming: aim towards mouse cursor - mouseX/Y are screen-relative offsets
+      player.aim = Math.atan2(mouseY, mouseX);
     }
   }
  
